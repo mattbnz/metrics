@@ -5,49 +5,24 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"mattb.nz/web/metrics/config"
+	"mattb.nz/web/metrics/db"
 	"mattb.nz/web/metrics/metrics"
 	"mattb.nz/web/metrics/prom"
 )
 
-type MonitoredSite struct {
-	Host            string
-	AllowedReferers []string
-}
-
-type Config []MonitoredSite
-
-var config Config
-
-func getHostForReferer(referer string) string {
-	for _, site := range config {
-		for _, allowed := range site.AllowedReferers {
-			if allowed == referer {
-				return site.Host
-			}
-		}
-	}
-	return ""
-}
-
-func isKnownHost(host string) bool {
-	for _, site := range config {
-		if site.Host == host {
-			return true
-		}
-	}
-	return false
-}
+var conf config.Config
 
 func CollectMetric(w http.ResponseWriter, r *http.Request) {
 	referer := r.Header.Get("Referer")
-	host := getHostForReferer(referer)
+	host := conf.GetHostForReferer(referer)
 	if host == "" {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("unknown host"))
@@ -56,7 +31,7 @@ func CollectMetric(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Unmarshal the request body into our Event struct.
-	event := metrics.Event{}
+	event := metrics.JsonEvent{}
 	err := json.NewDecoder(r.Body).Decode(&event)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -74,46 +49,30 @@ func CollectMetric(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	logEvent := db.EventLog{
+		When:     time.Now(),
+		Host:     host,
+		IP:       r.RemoteAddr,
+		RawEvent: event,
+	}
+	if err := db.DB.Create(&logEvent).Error; err != nil {
+		log.Printf("Could not log raw event: %v", err)
+	}
 	sitedata := metrics.GetSiteData(referer)
 	sitedata.EventCount[event.Event]++
 
 	w.WriteHeader(http.StatusOK)
 }
 
-// Load config from JSON file
-func loadConfig(filename string) (Config, error) {
-	// Open the file.
-	f, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	// Read the contents of the file into a byte array.
-	b, err := ioutil.ReadAll(f)
-	if err != nil {
-		return nil, err
-	}
-
-	// Unmarshal the JSON data into the provided interface.
-	config := Config{}
-	err = json.Unmarshal(b, &config)
-	if err != nil {
-		return nil, err
-	}
-
-	return config, nil
-}
-
-func setupHandlers() {
+func setupHandlers(mux *http.ServeMux) {
 	// register a prometheus metric exporter
 	collector := prom.Collector{}
 	prometheus.MustRegister(collector)
-	http.Handle("/metrics", promhttp.Handler())
+	mux.Handle("/metrics", promhttp.Handler())
 
-	http.HandleFunc("/", CollectMetric)
+	mux.HandleFunc("/", CollectMetric)
 
-	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("all good"))
 	})
@@ -121,12 +80,15 @@ func setupHandlers() {
 
 func main() {
 	var err error
-	config, err = loadConfig(os.Getenv("CONFIG_FILE"))
+	conf, err = config.LoadConfig(os.Getenv("CONFIG_FILE"))
 	if err != nil {
-		log.Fatalf("Could not load config: %v", err)
+		log.Fatalf("could not load config: %v", err)
+	}
+	if err := db.Init(conf); err != nil {
+		log.Printf("No DB available, will continue with Prometheus exports only!: %v", err)
 	}
 
-	setupHandlers()
+	setupHandlers(http.DefaultServeMux)
 
 	port := os.Getenv("PORT")
 	if port == "" {

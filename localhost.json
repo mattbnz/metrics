@@ -1,5 +1,9 @@
-[
-    {
-        "Host": "localhost:3000"
-    }
-]
+{
+    "DatabaseUrl": "file:/tmp/metrics.sqlite3",
+    "Sites": [
+        {
+            "Host": "localhost",
+            "AllowedReferers": ["localhost:3000"]
+        }
+    ]
+}

@@ -1,0 +1,17 @@
+{
+    "DatabaseUrl": "file::memory:?cache=shared",
+    "Sites": [
+        {
+            "Host": "test.com",
+            "AllowedReferers": [
+                "test.com"
+            ]
+        },
+        {
+            "Host": "another.com",
+            "AllowedReferers": [
+                "test2.com"
+            ]
+        }
+    ]
+}
