@@ -1,0 +1,14 @@
+[
+    {
+        "Host": "test.com",
+        "AllowedReferers": [
+            "test.com"
+        ]
+    },
+    {
+        "Host": "another.com",
+        "AllowedReferers": [
+            "test2.com"
+        ]
+    }
+]
