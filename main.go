@@ -20,7 +20,17 @@ import (
 
 var conf config.Config
 
+func writeCORSHeadres(w http.ResponseWriter) {
+	w.Header().Add("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Headers", "*")
+
+}
 func CollectMetric(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "OPTIONS" {
+		writeCORSHeadres(w)
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 	referer := r.Header.Get("Referer")
 	host := conf.GetHostForReferer(referer)
 	if host == "" {
@@ -62,6 +72,7 @@ func CollectMetric(w http.ResponseWriter, r *http.Request) {
 	sitedata := metrics.GetSiteData(referer)
 	sitedata.EventCount[event.Event]++
 
+	writeCORSHeadres(w)
 	w.WriteHeader(http.StatusOK)
 }
 
