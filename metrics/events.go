@@ -11,10 +11,12 @@ const (
 )
 
 type JsonEvent struct {
-	Event     EventType
-	SessionId string
-	Target    string
-	Value     string
+	Event     EventType `json:",omitempty"`
+	SessionId string    `json:",omitempty"`
+	Target    string    `json:",omitempty"`
+	Value     string    `json:",omitempty"`
+	// Only for EV_ACTIVITY events
+	ScrollPerc string `json:",omitempty"`
 }
 
 type Event struct {
