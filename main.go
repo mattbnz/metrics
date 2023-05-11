@@ -52,6 +52,7 @@ func CollectMetric(w http.ResponseWriter, r *http.Request) {
 	logEvent := db.EventLog{
 		When:     time.Now(),
 		Host:     host,
+		Referer:  referer,
 		IP:       r.RemoteAddr,
 		RawEvent: event,
 	}

@@ -14,6 +14,7 @@ type JsonEvent struct {
 	Event     EventType
 	SessionId string
 	Target    string
+	Value     string
 }
 
 type Event struct {
