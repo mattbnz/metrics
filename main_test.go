@@ -29,14 +29,14 @@ func Test_CollectMetric(t *testing.T) {
 		body    string
 		code    int
 	}{
-		{"GET", "/", "localhost", "", http.StatusNotFound},
-		{"GET", "/", "test.com", "", http.StatusBadRequest},
-		{"POST", "/", "test.com", "", http.StatusBadRequest},
-		{"POST", "/", "test.com", `{"event":"pageview"}`, http.StatusOK},
-		{"POST", "/", "test.com", `{"event":"pageview"}`, http.StatusOK},
-		{"POST", "/", "test.com", `{"event":"click"}`, http.StatusOK},
-		{"POST", "/", "test.com", `{"event":"activity"}`, http.StatusOK},
-		{"POST", "/", "test.com", `{"event":"somethingelse"}`, http.StatusBadRequest},
+		{"GET", "/", "http://localhost/", "", http.StatusNotFound},
+		{"GET", "/", "http://test.com/", "", http.StatusBadRequest},
+		{"POST", "/", "http://test.com/", "", http.StatusBadRequest},
+		{"POST", "/", "http://test.com/", `{"event":"pageview"}`, http.StatusOK},
+		{"POST", "/", "http://test.com/", `{"event":"pageview"}`, http.StatusOK},
+		{"POST", "/", "http://test.com/", `{"event":"click"}`, http.StatusOK},
+		{"POST", "/", "http://test.com/", `{"event":"activity"}`, http.StatusOK},
+		{"POST", "/", "http://test.com/", `{"event":"somethingelse"}`, http.StatusBadRequest},
 	}
 
 	mux := http.NewServeMux()

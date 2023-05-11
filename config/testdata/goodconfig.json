@@ -4,13 +4,13 @@
         {
             "Host": "test.com",
             "AllowedReferers": [
-                "test.com"
+                "http://test.com/"
             ]
         },
         {
             "Host": "another.com",
             "AllowedReferers": [
-                "test2.com"
+                "http://test2.com/"
             ]
         }
     ]

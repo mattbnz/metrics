@@ -14,14 +14,14 @@ func TestLoadJSONConfig(t *testing.T) {
 	if sites[0].Host != "test.com" {
 		t.Error("Expected test.com, got", sites[0].Host)
 	}
-	if sites[0].AllowedReferers[0] != "test.com" {
-		t.Error("Expected test.com, got", sites[0].AllowedReferers[0])
+	if sites[0].AllowedReferers[0] != "http://test.com/" {
+		t.Error("Expected http://test.com/, got", sites[0].AllowedReferers[0])
 	}
 	if sites[1].Host != "another.com" {
 		t.Error("Expected another.com, got", sites[1].Host)
 	}
-	if sites[1].AllowedReferers[0] != "test2.com" {
-		t.Error("Expected test2.com, got", sites[1].AllowedReferers[0])
+	if sites[1].AllowedReferers[0] != "http://test2.com/" {
+		t.Error("Expected http://test2.com/, got", sites[1].AllowedReferers[0])
 	}
 
 	_, err = LoadConfig("testdata/badconfig.json")
@@ -46,17 +46,17 @@ func Test_GetHostForReferer(t *testing.T) {
 		t.Error("Expected no error, got", err)
 	}
 
-	host := conf.GetHostForReferer("test.com")
+	host := conf.GetHostForReferer("http://test.com/")
 	if host != "test.com" {
 		t.Error("Expected test.com, got", host)
 	}
 
-	host = conf.GetHostForReferer("test2.com")
+	host = conf.GetHostForReferer("http://test2.com/")
 	if host != "another.com" {
 		t.Error("Expected another.com, got", host)
 	}
 
-	host = conf.GetHostForReferer("test3.com")
+	host = conf.GetHostForReferer("http://test3.com/")
 	if host != "" {
 		t.Error("Expected empty string, got", host)
 	}

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 type MonitoredSite struct {
@@ -45,7 +46,7 @@ func LoadConfig(filename string) (Config, error) {
 func (c Config) GetHostForReferer(referer string) string {
 	for _, site := range c.Sites {
 		for _, allowed := range site.AllowedReferers {
-			if allowed == referer {
+			if strings.HasPrefix(referer, allowed) {
 				return site.Host
 			}
 		}
