@@ -8,8 +8,8 @@ import (
 )
 
 type MonitoredSite struct {
-	Host            string
-	AllowedReferers []string
+	Host           string
+	AllowedOrigins []string
 }
 
 type Config struct {
@@ -43,10 +43,10 @@ func LoadConfig(filename string) (Config, error) {
 	return config, nil
 }
 
-func (c Config) GetHostForReferer(referer string) string {
+func (c Config) GetHostForOrigin(origin string) string {
 	for _, site := range c.Sites {
-		for _, allowed := range site.AllowedReferers {
-			if strings.HasPrefix(referer, allowed) {
+		for _, allowed := range site.AllowedOrigins {
+			if strings.HasPrefix(origin, allowed) {
 				return site.Host
 			}
 		}

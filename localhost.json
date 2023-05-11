@@ -3,7 +3,7 @@
     "Sites": [
         {
             "Host": "localhost",
-            "AllowedReferers": ["http://localhost:3000/"]
+            "AllowedOrigins": ["http://localhost:3000"]
         }
     ]
 }

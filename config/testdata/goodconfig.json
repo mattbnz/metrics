@@ -3,14 +3,14 @@
     "Sites": [
         {
             "Host": "test.com",
-            "AllowedReferers": [
-                "http://test.com/"
+            "AllowedOrigins": [
+                "http://test.com"
             ]
         },
         {
             "Host": "another.com",
-            "AllowedReferers": [
-                "http://test2.com/"
+            "AllowedOrigins": [
+                "http://test2.com"
             ]
         }
     ]

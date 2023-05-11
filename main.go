@@ -20,23 +20,33 @@ import (
 
 var conf config.Config
 
-func writeCORSHeadres(w http.ResponseWriter) {
-	w.Header().Add("Access-Control-Allow-Origin", "*")
-	w.Header().Add("Access-Control-Allow-Headers", "*")
+func writeCORSHeaders(w http.ResponseWriter, r *http.Request) {
+	origin := r.Header.Get("Origin")
+	if origin == "" {
+		origin = "*"
+	}
+	w.Header().Add("Access-Control-Allow-Origin", origin)
+	w.Header().Add("Access-Control-Allow-Credentials", "true")
+	headers := r.Header.Get("Access-Control-Request-Headers")
+	if headers == "" {
+		headers = "*"
+	}
+	w.Header().Add("Access-Control-Allow-Headers", headers)
 
 }
 func CollectMetric(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "OPTIONS" {
-		writeCORSHeadres(w)
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-	referer := r.Header.Get("Referer")
-	host := conf.GetHostForReferer(referer)
+	origin := r.Header.Get("Origin")
+	host := conf.GetHostForOrigin(origin)
 	if host == "" {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("unknown host"))
-		log.Printf("Ignoring request from unknown referer: %s", referer)
+		log.Printf("Ignoring request from unknown origin: %s", origin)
+		return
+	}
+
+	if r.Method == "OPTIONS" {
+		writeCORSHeaders(w, r)
+		w.WriteHeader(http.StatusOK)
 		return
 	}
 
@@ -45,7 +55,7 @@ func CollectMetric(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&event)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("bad request"))
+		w.Write([]byte("could not decode request body"))
 		return
 	}
 	if !metrics.IsKnownEvent(event.Event) {
@@ -59,6 +69,10 @@ func CollectMetric(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	referer := r.Header.Get("Referer")
+	if referer == "" {
+		referer = origin
+	}
 	logEvent := db.EventLog{
 		When:     time.Now(),
 		Host:     host,
@@ -69,10 +83,10 @@ func CollectMetric(w http.ResponseWriter, r *http.Request) {
 	if err := db.DB.Create(&logEvent).Error; err != nil {
 		log.Printf("Could not log raw event: %v", err)
 	}
-	sitedata := metrics.GetSiteData(referer)
+	sitedata := metrics.GetSiteData(origin)
 	sitedata.EventCount[event.Event]++
 
-	writeCORSHeadres(w)
+	writeCORSHeaders(w, r)
 	w.WriteHeader(http.StatusOK)
 }
 
