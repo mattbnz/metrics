@@ -73,11 +73,15 @@ func CollectMetric(w http.ResponseWriter, r *http.Request) {
 	if referer == "" {
 		referer = origin
 	}
+	ip := r.Header.Get("Fly-Client-IP")
+	if ip == "" {
+		ip = r.RemoteAddr
+	}
 	logEvent := db.EventLog{
 		When:     time.Now(),
 		Host:     host,
 		Referer:  referer,
-		IP:       r.RemoteAddr,
+		IP:       ip,
 		RawEvent: event,
 	}
 	if err := db.DB.Create(&logEvent).Error; err != nil {
