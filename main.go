@@ -97,18 +97,20 @@ func CollectMetric(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func setupHandlers(mux *http.ServeMux) {
-	// register a prometheus metric exporter
-	collector := prom.Collector{}
-	prometheus.MustRegister(collector)
-	mux.Handle("/metrics", promhttp.Handler())
-
+func setupPublicHandlers(mux *http.ServeMux) {
 	mux.HandleFunc("/", CollectMetric)
 
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("all good"))
 	})
+}
+
+func setupTSHandlers(mux *http.ServeMux) {
+	// register a prometheus metric exporter
+	collector := prom.Collector{}
+	prometheus.MustRegister(collector)
+	mux.Handle("/metrics", promhttp.Handler())
 }
 
 func envName() string {
@@ -134,7 +136,9 @@ func main() {
 		log.Fatalf("Failed to connect to tailscale: %v", err)
 	}
 
-	setupHandlers(http.DefaultServeMux)
+	setupPublicHandlers(http.DefaultServeMux)
+	tsmux := http.NewServeMux()
+	setupTSHandlers(tsmux)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -149,10 +153,10 @@ func main() {
 		wg.Done()
 	}()
 
-	// Try and also listen on TS (for admin UI)
+	// Try and also listen on TS (for /metrics)
 	wg.Add(1)
 	go func() {
-		tailscale.Serve(http.DefaultServeMux)
+		tailscale.Serve(tsmux)
 		wg.Done()
 	}()
 

@@ -76,8 +76,10 @@ func Test_CollectMetric(t *testing.T) {
 		t.Error("Error creating request:", err)
 		return
 	}
+	tsmux := http.NewServeMux()
+	setupTSHandlers(tsmux)
 	rr := httptest.NewRecorder()
-	mux.ServeHTTP(rr, req)
+	tsmux.ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusOK {
 		t.Error("handler returned wrong status code: got", status)
 	}
@@ -112,7 +114,7 @@ func Test_CollectMetric_NoDB(t *testing.T) {
 	conf = tconf
 
 	mux := http.NewServeMux()
-	setupHandlers(mux)
+	setupPublicHandlers(mux)
 
 	req, err := http.NewRequest("POST", "/", strings.NewReader(`{"event":"click"}`))
 	req.Header.Set("Origin", "http://test.com")
