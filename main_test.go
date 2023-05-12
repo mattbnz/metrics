@@ -23,28 +23,28 @@ func Test_CollectMetric(t *testing.T) {
 	conf = tconf
 
 	tests := []struct {
-		method  string
-		path    string
-		referer string
-		body    string
-		code    int
+		method string
+		path   string
+		origin string
+		body   string
+		code   int
 	}{
-		{"GET", "/", "http://localhost/", "", http.StatusNotFound},
-		{"GET", "/", "http://test.com/", "", http.StatusBadRequest},
-		{"POST", "/", "http://test.com/", "", http.StatusBadRequest},
-		{"POST", "/", "http://test.com/", `{"event":"pageview"}`, http.StatusOK},
-		{"POST", "/", "http://test.com/", `{"event":"pageview"}`, http.StatusOK},
-		{"POST", "/", "http://test.com/", `{"event":"click"}`, http.StatusOK},
-		{"POST", "/", "http://test.com/", `{"event":"activity"}`, http.StatusOK},
-		{"POST", "/", "http://test.com/", `{"event":"somethingelse"}`, http.StatusBadRequest},
+		{"GET", "/", "http://localhost", "", http.StatusNotFound},
+		{"GET", "/", "http://test.com", "", http.StatusBadRequest},
+		{"POST", "/", "http://test.com", "", http.StatusBadRequest},
+		{"POST", "/", "http://test.com", `{"event":"pageview"}`, http.StatusOK},
+		{"POST", "/", "http://test.com", `{"event":"pageview"}`, http.StatusOK},
+		{"POST", "/", "http://test.com", `{"event":"click"}`, http.StatusOK},
+		{"POST", "/", "http://test.com", `{"event":"activity"}`, http.StatusOK},
+		{"POST", "/", "http://test.com", `{"event":"somethingelse"}`, http.StatusBadRequest},
 	}
 
 	mux := http.NewServeMux()
-	setupHandlers(mux)
+	setupPublicHandlers(mux)
 
 	for i, test := range tests {
 		req, err := http.NewRequest(test.method, test.path, strings.NewReader(test.body))
-		req.Header.Set("Referer", test.referer)
+		req.Header.Set("Origin", test.origin)
 		if err != nil {
 			t.Errorf("Test %d: Error creating request: %v", i, err)
 			continue
@@ -115,7 +115,7 @@ func Test_CollectMetric_NoDB(t *testing.T) {
 	setupHandlers(mux)
 
 	req, err := http.NewRequest("POST", "/", strings.NewReader(`{"event":"click"}`))
-	req.Header.Set("Referer", "test.com")
+	req.Header.Set("Origin", "http://test.com")
 	if err != nil {
 		t.Errorf("Error creating request: %v", err)
 		return

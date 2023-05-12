@@ -90,7 +90,7 @@ func CollectMetric(w http.ResponseWriter, r *http.Request) {
 	if err := db.DB.Create(&logEvent).Error; err != nil {
 		log.Printf("Could not log raw event: %v", err)
 	}
-	sitedata := metrics.GetSiteData(origin)
+	sitedata := metrics.GetSiteData(host)
 	sitedata.EventCount[event.Event]++
 
 	writeCORSHeaders(w, r)
