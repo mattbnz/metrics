@@ -13,7 +13,8 @@ type MonitoredSite struct {
 }
 
 type Config struct {
-	DatabaseUrl string
+	DatabaseUrl    string
+	StateDirectory string
 
 	Sites []MonitoredSite
 }

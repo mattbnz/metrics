@@ -1,5 +1,6 @@
 {
     "DatabaseUrl": "file::memory:?cache=shared",
+    "StateDirectory": "/tmp",
     "Sites": [
         {
             "Host": "test.com",

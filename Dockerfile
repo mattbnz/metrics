@@ -1,4 +1,4 @@
-FROM golang:1.19
+FROM golang:1.20
 WORKDIR /app
 COPY . ./
 RUN git config --global --add safe.directory /app

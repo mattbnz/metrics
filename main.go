@@ -5,9 +5,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -16,6 +18,7 @@ import (
 	"mattb.nz/web/metrics/db"
 	"mattb.nz/web/metrics/metrics"
 	"mattb.nz/web/metrics/prom"
+	"mattb.nz/web/metrics/tailscale"
 )
 
 var conf config.Config
@@ -108,6 +111,14 @@ func setupHandlers(mux *http.ServeMux) {
 	})
 }
 
+func envName() string {
+	env := os.Getenv("METRIC_ENV")
+	if env == "" {
+		env = "dev"
+	}
+	return env
+}
+
 func main() {
 	var err error
 	conf, err = config.LoadConfig(os.Getenv("CONFIG_FILE"))
@@ -118,13 +129,32 @@ func main() {
 		log.Printf("No DB available, will continue with Prometheus exports only!: %v", err)
 	}
 
+	err = tailscale.Init(fmt.Sprintf("metrics-%s", envName()), conf.StateDirectory, 30*time.Second)
+	if err != nil {
+		log.Fatalf("Failed to connect to tailscale: %v", err)
+	}
+
 	setupHandlers(http.DefaultServeMux)
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
-	log.Println("listening on", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	// Always listen on localhost
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
+	go func() {
+		log.Println("listening on", port)
+		http.ListenAndServe(fmt.Sprintf(":%s", port), nil)
+		wg.Done()
+	}()
 
+	// Try and also listen on TS (for admin UI)
+	wg.Add(1)
+	go func() {
+		tailscale.Serve(http.DefaultServeMux)
+		wg.Done()
+	}()
+
+	wg.Wait()
 }

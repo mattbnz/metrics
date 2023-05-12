@@ -1,5 +1,6 @@
 {
     "DatabaseUrl": "file:/tmp/metrics.sqlite3",
+    "StateDirectory": ".tailscale/",
     "Sites": [
         {
             "Host": "localhost",
