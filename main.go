@@ -81,11 +81,12 @@ func CollectMetric(w http.ResponseWriter, r *http.Request) {
 		ip = r.RemoteAddr
 	}
 	logEvent := db.EventLog{
-		When:     time.Now(),
-		Host:     host,
-		Referer:  referer,
-		IP:       ip,
-		RawEvent: event,
+		When:        time.Now(),
+		Host:        host,
+		Referer:     referer,
+		UserAgentID: db.GetUserAgentID(r.Header.Get("User-Agent")),
+		IP:          ip,
+		RawEvent:    event,
 	}
 	if err := db.DB.Create(&logEvent).Error; err != nil {
 		log.Printf("Could not log raw event: %v", err)

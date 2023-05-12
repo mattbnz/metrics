@@ -26,17 +26,18 @@ func Test_CollectMetric(t *testing.T) {
 		method string
 		path   string
 		origin string
+		ua     string
 		body   string
 		code   int
 	}{
-		{"GET", "/", "http://localhost", "", http.StatusNotFound},
-		{"GET", "/", "http://test.com", "", http.StatusBadRequest},
-		{"POST", "/", "http://test.com", "", http.StatusBadRequest},
-		{"POST", "/", "http://test.com", `{"event":"pageview"}`, http.StatusOK},
-		{"POST", "/", "http://test.com", `{"event":"pageview"}`, http.StatusOK},
-		{"POST", "/", "http://test.com", `{"event":"click"}`, http.StatusOK},
-		{"POST", "/", "http://test.com", `{"event":"activity"}`, http.StatusOK},
-		{"POST", "/", "http://test.com", `{"event":"somethingelse"}`, http.StatusBadRequest},
+		{"GET", "/", "http://localhost", "", "", http.StatusNotFound},
+		{"GET", "/", "http://test.com", "", "", http.StatusBadRequest},
+		{"POST", "/", "http://test.com", "", "", http.StatusBadRequest},
+		{"POST", "/", "http://test.com", "browser1", `{"event":"pageview"}`, http.StatusOK},
+		{"POST", "/", "http://test.com", "browser1", `{"event":"pageview"}`, http.StatusOK},
+		{"POST", "/", "http://test.com", "browser2", `{"event":"click"}`, http.StatusOK},
+		{"POST", "/", "http://test.com", "browser3", `{"event":"activity"}`, http.StatusOK},
+		{"POST", "/", "http://test.com", "", `{"event":"somethingelse"}`, http.StatusBadRequest},
 	}
 
 	mux := http.NewServeMux()
@@ -45,6 +46,7 @@ func Test_CollectMetric(t *testing.T) {
 	for i, test := range tests {
 		req, err := http.NewRequest(test.method, test.path, strings.NewReader(test.body))
 		req.Header.Set("Origin", test.origin)
+		req.Header.Set("User-Agent", test.ua)
 		if err != nil {
 			t.Errorf("Test %d: Error creating request: %v", i, err)
 			continue
@@ -99,6 +101,12 @@ func Test_CollectMetric(t *testing.T) {
 	}
 	if c != 4 {
 		t.Error("Expected 4 events, got", c)
+	}
+	if err := db.DB.Model(&db.UserAgent{}).Count(&c).Error; err != nil {
+		t.Error("Error counting user agents:", err)
+	}
+	if c != 3 {
+		t.Error("Expected 3 user agents, got", c)
 	}
 }
 
