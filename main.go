@@ -112,7 +112,7 @@ func setupHandlers(mux *http.ServeMux) {
 }
 
 func envName() string {
-	env := os.Getenv("METRIC_ENV")
+	env := os.Getenv("METRICS_ENV")
 	if env == "" {
 		env = "dev"
 	}
