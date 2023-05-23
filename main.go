@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"sync"
@@ -78,21 +79,28 @@ func CollectMetric(w http.ResponseWriter, r *http.Request) {
 	}
 	ip := r.Header.Get("Fly-Client-IP")
 	if ip == "" {
-		ip = r.RemoteAddr
+		ip, _, err = net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			ip = ""
+		}
 	}
-	logEvent := db.EventLog{
-		When:        time.Now(),
-		Host:        host,
-		Referer:     referer,
-		UserAgentID: db.GetUserAgentID(r.Header.Get("User-Agent")),
-		IP:          ip,
-		RawEvent:    event,
+	if conf.IsIgnoredIP(ip) {
+		log.Printf("Ignoring %v on %s from ignored IP %s", event, referer, ip)
+	} else {
+		logEvent := db.EventLog{
+			When:        time.Now(),
+			Host:        host,
+			Referer:     referer,
+			UserAgentID: db.GetUserAgentID(r.Header.Get("User-Agent")),
+			IP:          ip,
+			RawEvent:    event,
+		}
+		if err := db.DB.Create(&logEvent).Error; err != nil {
+			log.Printf("Could not log raw event: %v", err)
+		}
+		sitedata := metrics.GetSiteData(host)
+		sitedata.EventCount[event.Event]++
 	}
-	if err := db.DB.Create(&logEvent).Error; err != nil {
-		log.Printf("Could not log raw event: %v", err)
-	}
-	sitedata := metrics.GetSiteData(host)
-	sitedata.EventCount[event.Event]++
 
 	writeCORSHeaders(w, r)
 	w.WriteHeader(http.StatusOK)

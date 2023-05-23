@@ -38,6 +38,11 @@ func TestLoadJSONConfig(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error, got nil")
 	}
+
+	_, err = LoadConfig("testdata/badcidr.json")
+	if err == nil {
+		t.Error("Expected error, got nil")
+	}
 }
 
 func Test_GetHostForReferer(t *testing.T) {
@@ -59,5 +64,25 @@ func Test_GetHostForReferer(t *testing.T) {
 	host = conf.GetHostForOrigin("http://test3.com")
 	if host != "" {
 		t.Error("Expected empty string, got", host)
+	}
+}
+
+func Test_IsIgnoredIP(t *testing.T) {
+	conf, err := LoadConfig("testdata/goodconfig.json")
+	if err != nil {
+		t.Error("Expected no error, got", err)
+	}
+
+	if conf.IsIgnoredIP("10.10.10.10") {
+		t.Error("Expected 10.10.10.10 not to be ignored, but IsIgnoredIP returned true")
+	}
+	if !conf.IsIgnoredIP("10.10.11.10") {
+		t.Error("Expected 10.10.11.10 to be ignored, but IsIgnoredIP returned false")
+	}
+	if !conf.IsIgnoredIP("10.10.11.250") {
+		t.Error("Expected 10.10.11.250 to be ignored, but IsIgnoredIP returned false")
+	}
+	if !conf.IsIgnoredIP("192.168.1.2") {
+		t.Error("Expected 192.168.1.2 to be ignored, but IsIgnoredIP returned false")
 	}
 }

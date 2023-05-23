@@ -2,7 +2,9 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"strings"
 )
@@ -17,6 +19,10 @@ type Config struct {
 	StateDirectory string
 
 	Sites []MonitoredSite
+
+	// List of networks to ignore requests from in CIDR notation
+	IgnoreNets   []string
+	_ignoredNets []*net.IPNet
 }
 
 // Load config from JSON file
@@ -41,6 +47,15 @@ func LoadConfig(filename string) (Config, error) {
 		return Config{}, err
 	}
 
+	// Parse the ignored networks
+	for _, cidrNet := range config.IgnoreNets {
+		_, net, err := net.ParseCIDR(cidrNet)
+		if err != nil {
+			return Config{}, fmt.Errorf("could not parse ignored network %s: %v", cidrNet, err)
+		}
+		config._ignoredNets = append(config._ignoredNets, net)
+	}
+
 	return config, nil
 }
 
@@ -53,4 +68,17 @@ func (c Config) GetHostForOrigin(origin string) string {
 		}
 	}
 	return ""
+}
+
+func (c Config) IsIgnoredIP(ip string) bool {
+	ipAddr := net.ParseIP(ip)
+	if ipAddr == nil {
+		return false
+	}
+	for _, net := range c._ignoredNets {
+		if net.Contains(ipAddr) {
+			return true
+		}
+	}
+	return false
 }
