@@ -16,6 +16,14 @@ import (
 var DB *gorm.DB
 var models []interface{}
 
+type PreCheckModel interface {
+	PreMigrate(db *gorm.DB) error
+}
+
+type PostCheckModel interface {
+	PostMigrate(db *gorm.DB) error
+}
+
 func Init(config config.Config) error {
 	l := logger.New(log.New(os.Stdout, "\r\n", log.LstdFlags), logger.Config{
 		SlowThreshold:             200 * time.Millisecond,
@@ -27,10 +35,14 @@ func Init(config config.Config) error {
 	if err != nil {
 		return fmt.Errorf("could not open database: %w", err)
 	}
+	// Manually migrate metadata table, so its always available for others to use
+	if err := db.AutoMigrate(&Meta{}); err != nil {
+		return fmt.Errorf("could not automigrate metadata table: %w", err)
+	}
+	DB = db // Set before migrations so callbacks can access metadata
 	if err := automigrate(db); err != nil {
 		return fmt.Errorf("could not automigrate: %w", err)
 	}
-	DB = db
 	return nil
 }
 
@@ -40,10 +52,20 @@ func register(model interface{}) {
 
 func automigrate(db *gorm.DB) error {
 	for _, model := range models {
+		if cm, ok := model.(PreCheckModel); ok {
+			if err := cm.PreMigrate(db); err != nil {
+				return err
+			}
+		}
 		if err := db.AutoMigrate(model); err != nil {
 			return fmt.Errorf("could not automigrate %s: %w", reflect.TypeOf(model), err)
 		}
 		log.Printf("Automigrated %s", reflect.TypeOf(model))
+		if cm, ok := model.(PostCheckModel); ok {
+			if err := cm.PostMigrate(db); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
