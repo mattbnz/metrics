@@ -65,7 +65,8 @@ export async function SendMetric(data) {
 export function SetupMetrics(url, reportIntervalSecs) {
     reportURL = url;
     // Log the load
-    SendMetric({"Event": "pageview", "SessionId": view})
+    SendMetric({"Event": "pageview", "SessionId": view,
+                "Page": document.URL, "Referer": document.referrer})
     // Watch for events
     addElementHandlers("notify-click", "click", notifyClick);
     addElementHandlers("notify-change", "change", notifyChange);

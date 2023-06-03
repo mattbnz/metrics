@@ -73,10 +73,20 @@ func CollectMetric(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	referer := r.Header.Get("Referer")
-	if referer == "" {
-		referer = origin
+	page := event.Page
+	if page == "" {
+		// Everything should sent us Page ideally, but if not
+		// see if we can get it from the Referer header.
+		page = r.Header.Get("Referer")
 	}
+	if page == "" {
+		page = origin
+	}
+	referer := event.Referer
+	if referer == page {
+		referer = "" // Don't both storing referer if its the triggering page.
+	}
+
 	ip := r.Header.Get("Fly-Client-IP")
 	if ip == "" {
 		ip, _, err = net.SplitHostPort(r.RemoteAddr)
@@ -85,11 +95,16 @@ func CollectMetric(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if conf.IsIgnoredIP(ip) {
-		log.Printf("Ignoring %v on %s from ignored IP %s", event, referer, ip)
+		log.Printf("Ignoring %v on %s from ignored IP %s", event, page, ip)
 	} else {
+		// Trim page/referer from raw_event saved to save DB space
+		// (they're explicit columns)
+		event.Page = ""
+		event.Referer = ""
 		logEvent := db.EventLog{
 			When:        time.Now(),
 			Host:        host,
+			Page:        page,
 			Referer:     referer,
 			UserAgentID: db.GetUserAgentID(r.Header.Get("User-Agent")),
 			IP:          ip,

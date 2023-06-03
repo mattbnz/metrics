@@ -13,9 +13,12 @@ const (
 type JsonEvent struct {
 	Event     EventType `json:",omitempty"`
 	SessionId string    `json:",omitempty"`
-	Target    string    `json:",omitempty"`
-	Value     string    `json:",omitempty"`
-	// Only for EV_ACTIVITY events
+	Page      string    `json:",omitempty"` // Page triggering the event
+	Referer   string    `json:",omitempty"` // Who sent user to that page.
+	// Data for EV_CLICK style events
+	Target string `json:",omitempty"`
+	Value  string `json:",omitempty"`
+	// Data for EV_ACTIVITY style events
 	ScrollPerc string `json:",omitempty"`
 }
 
