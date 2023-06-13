@@ -8,6 +8,7 @@ const (
 	EV_PAGEVIEW EventType = "pageview"
 	EV_CLICK    EventType = "click"
 	EV_ACTIVITY EventType = "activity"
+	EV_CONTEXT  EventType = "context"
 )
 
 type JsonEvent struct {
@@ -44,7 +45,7 @@ func GetSiteData(host string) *SiteData {
 
 func IsKnownEvent(event EventType) bool {
 	switch event {
-	case EV_PAGEVIEW, EV_CLICK, EV_ACTIVITY:
+	case EV_PAGEVIEW, EV_CLICK, EV_ACTIVITY, EV_CONTEXT:
 		return true
 	}
 	return false
