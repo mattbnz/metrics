@@ -25,6 +25,7 @@ import (
 
 var conf config.Config
 
+// write CORS headers for a request
 func writeCORSHeaders(w http.ResponseWriter, r *http.Request) {
 	origin := r.Header.Get("Origin")
 	if origin == "" {
@@ -37,8 +38,16 @@ func writeCORSHeaders(w http.ResponseWriter, r *http.Request) {
 		headers = "*"
 	}
 	w.Header().Add("Access-Control-Allow-Headers", headers)
-
 }
+
+// wrap a handler (e.g. fs.FileServer) to add CORS headers
+func serveWithCORS(h http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		writeCORSHeaders(w, r)
+		h.ServeHTTP(w, r)
+	}
+}
+
 func CollectMetric(w http.ResponseWriter, r *http.Request) {
 	origin := r.Header.Get("Origin")
 	host := conf.GetHostForOrigin(origin)
@@ -130,7 +139,7 @@ func setupPublicHandlers(mux *http.ServeMux) {
 		w.Write([]byte("all good"))
 	})
 
-	mux.Handle("/js/", http.StripPrefix("/js/", js.FileServer()))
+	mux.Handle("/js/", http.StripPrefix("/js/", serveWithCORS(js.FileServer())))
 }
 
 func setupTSHandlers(mux *http.ServeMux) {
