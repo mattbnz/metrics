@@ -17,6 +17,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"mattb.nz/web/metrics/config"
 	"mattb.nz/web/metrics/db"
+	"mattb.nz/web/metrics/js"
 	"mattb.nz/web/metrics/metrics"
 	"mattb.nz/web/metrics/prom"
 	"mattb.nz/web/metrics/tailscale"
@@ -128,6 +129,8 @@ func setupPublicHandlers(mux *http.ServeMux) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("all good"))
 	})
+
+	mux.Handle("/js/", http.StripPrefix("/js/", js.FileServer()))
 }
 
 func setupTSHandlers(mux *http.ServeMux) {
