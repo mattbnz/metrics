@@ -1,8 +1,11 @@
 {
   "name": "@mattbnz/metrics",
+  "type": "module",
   "version": "0.0.1",
   "description": "metrics client for mattb/mkmba",
-  "files": [ "*.js" ],
+  "files": [
+    "*.js"
+  ],
   "main": "client.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -14,6 +17,9 @@
     "web-vitals": "^3.4.0"
   },
   "devDependencies": {
-    "genversion": "https://github.com/mattbnz/genversion.git"
-  }
+    "@rollup/plugin-node-resolve": "^15.1.0",
+    "genversion": "git+https://github.com/mattbnz/genversion.git",
+    "rollup": "^3.26.2"
+  },
+  "keywords": []
 }
