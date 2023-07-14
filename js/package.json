@@ -1,5 +1,5 @@
 {
-  "name": "metrics",
+  "name": "@mattbnz/metrics",
   "version": "0.0.1",
   "description": "metrics client for mattb/mkmba",
   "files": [ "*.js" ],
