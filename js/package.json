@@ -9,7 +9,8 @@
   "main": "client.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "genversion -e -g version.js && rollup -c"
+    "build": "genversion -e -g version.js && rollup -c",
+    "prepare": "genversion -e -g version.js"
   },
   "author": "Matt Brown",
   "license": "UNLICENSED",
