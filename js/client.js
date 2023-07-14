@@ -1,3 +1,4 @@
+import { version } from './version'
 import { onLCP, onFID, onCLS } from 'web-vitals';
 
 var view = Math.random().toString(36).substring(2, 12);
@@ -83,7 +84,7 @@ export function SetupMetrics(url, reportIntervalSecs) {
             SendMetric({
                 "Event": "pageview", "SessionId": view,
                 "Page": document.URL, "Referer": document.referrer,
-                "LoadTime": entry.duration
+                "LoadTime": entry.duration, "JSVersion": version
             })
             // Don't need more timing after we get the pageview.
             observer.disconnect();

@@ -14,6 +14,7 @@ const (
 
 type JsonEvent struct {
 	Event     EventType `json:",omitempty"`
+	JSVersion string    `json:",omitempty"`
 	SessionId string    `json:",omitempty"`
 	Page      string    `json:",omitempty"` // Page triggering the event
 	Referer   string    `json:",omitempty"` // Who sent user to that page.

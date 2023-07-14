@@ -2,13 +2,18 @@
   "name": "metrics",
   "version": "0.0.1",
   "description": "metrics client for mattb/mkmba",
+  "files": [ "*.js" ],
   "main": "client.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "genversion -e -g version.js"
   },
   "author": "Matt Brown",
   "license": "UNLICENSED",
   "dependencies": {
     "web-vitals": "^3.4.0"
+  },
+  "devDependencies": {
+    "genversion": "https://github.com/mattbnz/genversion.git"
   }
 }
