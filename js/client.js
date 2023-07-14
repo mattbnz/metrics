@@ -1,3 +1,5 @@
+import { onLCP, onFID, onCLS } from 'web-vitals';
+
 var view = Math.random().toString(36).substring(2, 12);
 var hadActivity = false;
 var scrollPerc = 0;
@@ -45,6 +47,13 @@ function addElementHandlers(className, eventName, handler) {
     }
 }
 
+function recordVital({ name, value, id, navigationType }) {
+    SendMetric({
+        "Event": "vitals", "SessionId": view,
+        [name]: value, "navigationType": navigationType
+    });
+}
+
 export async function SendMetric(data) {
     if (reportURL == "") {
         return;
@@ -65,9 +74,22 @@ export async function SendMetric(data) {
 
 export function SetupMetrics(url, reportIntervalSecs) {
     reportURL = url;
-    // Log the load
-    SendMetric({"Event": "pageview", "SessionId": view,
-                "Page": document.URL, "Referer": document.referrer})
+    // Log the load via a performance observer to get pageload time.
+    const observer = new PerformanceObserver((list) => {
+        list.getEntries().forEach((entry) => {
+            if (entry.duration == 0) {
+                return;
+            }
+            SendMetric({
+                "Event": "pageview", "SessionId": view,
+                "Page": document.URL, "Referer": document.referrer,
+                "LoadTime": entry.duration
+            })
+            // Don't need more timing after we get the pageview.
+            observer.disconnect();
+        });
+    });
+    observer.observe({ type: "navigation", buffered: true });
     // Watch for events
     addElementHandlers("notify-click", "click", notifyClick);
     addElementHandlers("notify-change", "change", notifyChange);
@@ -77,5 +99,9 @@ export function SetupMetrics(url, reportIntervalSecs) {
     if (reportIntervalSecs < 20) {
         reportIntervalSecs = 20;
     }
-    setInterval(reportActivity, reportIntervalSecs*1000);
+    setInterval(reportActivity, reportIntervalSecs * 1000);
+    // Record web vitals
+    onCLS(recordVital);
+    onFID(recordVital);
+    onLCP(recordVital);
 }
