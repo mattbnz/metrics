@@ -50,16 +50,17 @@ export async function SendMetric(data) {
         return;
     }
     // Fire and forget, don't care about response or success.
-    try {
-        fetch(reportURL, {
-            body : JSON.stringify(data),
-            method : 'POST',
-            referrerPolicy: "no-referrer-when-downgrade",
-            keepalive: true,
-        });
-    } catch (e) {
-        console.log("Failed to send metric to " + reportURL + ": " + e);
-    }
+    fetch(reportURL, {
+        body: JSON.stringify(data),
+        method: 'POST',
+        referrerPolicy: "no-referrer-when-downgrade",
+        keepalive: true,
+    }).then(function (response) {
+        if (!response.ok) {
+            console.log("Failed to send metric to " + reportURL + ": " + response.statusText)
+        }
+    })
+    .catch(error => console.log("Failed to send metric to " + reportURL + ": " + error));
 }
 
 export function SetupMetrics(url, reportIntervalSecs) {
