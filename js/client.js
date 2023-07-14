@@ -7,14 +7,14 @@ var scrollPerc = 0;
 var reportURL = "";
 
 function sendClick(target) {
-    SendMetric({"Event": "click", "Target": target, "SessionId": view})
+    SendMetric({ "Event": "click", "Target": target, "SessionId": view })
 }
 
 function notifyClick(e) {
     sendClick(e.target.id);
 }
 function notifyChange(e) {
-    SendMetric({"Event": "click", "Target": e.target.id, "Value": e.target.value, "SessionId": view})
+    SendMetric({ "Event": "click", "Target": e.target.id, "Value": e.target.value, "SessionId": view })
 }
 
 function onMouse(e) {
@@ -36,7 +36,7 @@ function reportActivity() {
             "Event": "activity",
             "SessionId": view,
             "ScrollPerc": scrollPerc.toString(),
-         });
+        });
     }
 }
 
