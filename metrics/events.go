@@ -9,6 +9,7 @@ const (
 	EV_CLICK    EventType = "click"
 	EV_ACTIVITY EventType = "activity"
 	EV_CONTEXT  EventType = "context"
+	EV_VITALS   EventType = "vitals"
 )
 
 type JsonEvent struct {
@@ -16,11 +17,17 @@ type JsonEvent struct {
 	SessionId string    `json:",omitempty"`
 	Page      string    `json:",omitempty"` // Page triggering the event
 	Referer   string    `json:",omitempty"` // Who sent user to that page.
+	LoadTime  float64   `json:",omitempty"`
 	// Data for EV_CLICK style events
 	Target string `json:",omitempty"`
 	Value  string `json:",omitempty"`
 	// Data for EV_ACTIVITY style events
 	ScrollPerc string `json:",omitempty"`
+	// Web vitals metrics for EV_VITALS style events
+	LCP            float64 `json:",omitempty"`
+	FID            float64 `json:",omitempty"`
+	CLS            float64 `json:",omitempty"`
+	NavigationType string  `json:",omitempty"`
 }
 
 type Event struct {
@@ -45,7 +52,7 @@ func GetSiteData(host string) *SiteData {
 
 func IsKnownEvent(event EventType) bool {
 	switch event {
-	case EV_PAGEVIEW, EV_CLICK, EV_ACTIVITY, EV_CONTEXT:
+	case EV_PAGEVIEW, EV_CLICK, EV_ACTIVITY, EV_CONTEXT, EV_VITALS:
 		return true
 	}
 	return false
