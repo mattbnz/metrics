@@ -3,6 +3,7 @@ module mattb.nz/web/metrics
 go 1.20
 
 require (
+	github.com/mocktools/go-smtp-mock/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.15.1
 	gorm.io/driver/sqlite v1.5.0

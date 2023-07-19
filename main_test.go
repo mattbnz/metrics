@@ -2,10 +2,14 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
+
+	smtpmock "github.com/mocktools/go-smtp-mock/v2"
 
 	"mattb.nz/web/metrics/config"
 	"mattb.nz/web/metrics/db"
@@ -137,4 +141,116 @@ func Test_CollectMetric_NoDB(t *testing.T) {
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v. Body: %s", status, http.StatusOK, rr.Body.String())
 	}
+}
+
+// Test contact submission functionality
+func Test_ContactForm(t *testing.T) {
+	tconf, err := config.LoadConfig("config/testdata/goodconfig.json")
+	if err != nil {
+		panic(err)
+	}
+	if err := db.Init(tconf); err != nil {
+		panic(err)
+	}
+	conf = tconf
+
+	server := smtpmock.New(smtpmock.ConfigurationAttr{
+		LogToStdout:       true,
+		LogServerActivity: true,
+	})
+	if err := server.Start(); err != nil {
+		panic(err)
+	}
+	old_host := os.Getenv("SMTP_HOST")
+	old_port := os.Getenv("SMTP_PORT")
+	old_user := os.Getenv("SMTP_USER")
+	defer func() {
+		os.Setenv("SMTP_HOST", old_host)
+		os.Setenv("SMTP_PORT", old_port)
+		os.Setenv("SMTP_PORT", old_user)
+		if err := server.Stop(); err != nil {
+			panic(err)
+		}
+	}()
+	os.Setenv("SMTP_HOST", "127.0.0.1")
+	os.Setenv("SMTP_PORT", fmt.Sprintf("%d", server.PortNumber()))
+	os.Setenv("SMTP_USER", "")
+
+	tests := []struct {
+		method string
+		path   string
+		origin string
+		body   string
+		code   int
+	}{
+
+		{"GET", "/contact", "http://test.com", "", http.StatusBadRequest},  // Requires Post
+		{"POST", "/contact", "http://localhost", "", http.StatusNotFound},  // Unknown origin
+		{"POST", "/contact", "http://test.com", "", http.StatusBadRequest}, // Requires form data
+		{"POST", "/contact", "http://test.com", `{"name":"me", "org":"yep", "details":"a@b.com", "msg":"hi"}`, http.StatusOK},
+		{"POST", "/contact", "http://test2.com", `{"name":"me", "org":"yep", "details":"a@b.com", "msg":"hi"}`, http.StatusServiceUnavailable}, // not configured
+	}
+
+	mux := http.NewServeMux()
+	setupPublicHandlers(mux)
+
+	for i, test := range tests {
+		req, err := http.NewRequest(test.method, test.path, strings.NewReader(test.body))
+		req.Header.Set("Origin", test.origin)
+		req.RemoteAddr = "127.0.0.1:45678"
+		if err != nil {
+			t.Errorf("Test %d: Error creating request: %v", i, err)
+			continue
+		}
+
+		// Create a response recorder.
+		rr := httptest.NewRecorder()
+		mux.ServeHTTP(rr, req)
+
+		// Check the status code.
+		if status := rr.Code; status != test.code {
+			t.Errorf("Test %d: handler returned wrong status code: got %v want %v. Body: %s", i, status, test.code, rr.Body.String())
+		}
+	}
+
+	// Should only have 1 message generated
+	for i, msg := range server.Messages() {
+		if !msg.IsConsistent() {
+			t.Errorf("Email %d did not send successfully!", i+1)
+		}
+		msgData := msg.MsgRequest()
+		if i != 0 {
+			t.Errorf("Expected 1 email to be generated, but found messaged #%d: %s", i+1, msgData)
+		}
+		expect := "Contact form submission from test.com"
+		if !strings.Contains(msgData, expect) {
+			t.Errorf("Message %d did not contain '%s': %s", i+1, expect, msgData)
+		}
+	}
+	var msgs []db.MailLog
+	if err := db.DB.Model(&db.MailLog{}).Find(&msgs).Error; err != nil {
+		panic(err)
+	}
+	if len(msgs) != 1 {
+		t.Errorf("Expected 1 message in DB, got %d", len(msgs))
+	}
+	if msgs[0].Host != "test.com" {
+		t.Errorf("Expected DB message Host to be test.com, got %s", msgs[0].Host)
+	}
+	if msgs[0].IP != "127.0.0.1" {
+		t.Errorf("Expected DB message Host to be 127.0.0.1, got %s", msgs[0].IP)
+	}
+	if msgs[0].Name != "me" {
+		t.Errorf("Expected DB message Name to be me, got %s", msgs[0].Name)
+	}
+	if msgs[0].Org != "yep" {
+		t.Errorf("Expected DB message Org to be yep, got %s", msgs[0].Org)
+	}
+	if msgs[0].Details != "a@b.com" {
+		t.Errorf("Expected DB message Details to be a@b.com, got %s", msgs[0].Details)
+	}
+	if msgs[0].Msg != "hi" {
+		t.Errorf("Expected DB message Msg to be hi, got %s", msgs[0].Msg)
+	}
+
 }

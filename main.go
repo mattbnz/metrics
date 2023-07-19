@@ -4,11 +4,13 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
+	"net/smtp"
 	"os"
 	"sync"
 	"time"
@@ -21,6 +23,7 @@ import (
 	"mattb.nz/web/metrics/metrics"
 	"mattb.nz/web/metrics/prom"
 	"mattb.nz/web/metrics/tailscale"
+	"mattb.nz/web/metrics/templates"
 )
 
 var conf config.Config
@@ -48,19 +51,126 @@ func serveWithCORS(h http.Handler) http.HandlerFunc {
 	}
 }
 
-func CollectMetric(w http.ResponseWriter, r *http.Request) {
+// returns the request IP
+func requestIP(r *http.Request) string {
+	ip := r.Header.Get("Fly-Client-IP")
+	if ip == "" {
+		var err error
+		ip, _, err = net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			ip = ""
+		}
+	}
+	return ip
+}
+
+// returns the known origin and host if the request should continue, or empty strings in failure cases.
+//
+// Failure cases include either a request from an unknown origin, OR a pre-flight request
+// from a known origin, in which case the pre-flight response has already been sent so further
+// processing should not continue.
+func checkOriginCORS(w http.ResponseWriter, r *http.Request) (string, string) {
 	origin := r.Header.Get("Origin")
 	host := conf.GetHostForOrigin(origin)
 	if host == "" {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("unknown host"))
 		log.Printf("Ignoring request from unknown origin: %s", origin)
-		return
+		return "", ""
 	}
 
 	if r.Method == "OPTIONS" {
 		writeCORSHeaders(w, r)
 		w.WriteHeader(http.StatusOK)
+		return "", ""
+	}
+
+	return origin, host
+}
+
+type contactData struct {
+	Name    string
+	Org     string
+	Details string
+	Msg     string
+}
+
+func ContactForm(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	origin, host := checkOriginCORS(w, r)
+	if origin == "" {
+		return
+	}
+	to := conf.HostContacts(host)
+	if len(to) <= 0 {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		return
+	}
+	msg := contactData{}
+	err := json.NewDecoder(r.Body).Decode(&msg)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("could not decode request body"))
+		return
+	}
+
+	// Log first
+	logEvent := db.MailLog{
+		When:    time.Now(),
+		Host:    host,
+		Name:    msg.Name,
+		Org:     msg.Org,
+		Details: msg.Details,
+		Msg:     msg.Msg,
+		IP:      requestIP(r),
+	}
+	if err := db.DB.Create(&logEvent).Error; err != nil {
+		log.Printf("Could not log contact data: %v", err)
+	}
+	sitedata := metrics.GetSiteData(host)
+	sitedata.EventCount[metrics.EV_EMAIL]++
+
+	// Then send email.
+	from := "web-contact@" + host
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := os.Getenv("SMTP_PORT")
+
+	tmpl, err := templates.Get("contactform.tmpl")
+	if err != nil {
+		log.Printf("Could not load email template: %v", err)
+	} else {
+		data := map[string]any{
+			"From":  from,
+			"To":    to,
+			"Event": logEvent,
+		}
+		var buf bytes.Buffer
+		err := tmpl.Execute(&buf, data)
+		if err != nil {
+			log.Printf("Could not render email template: %v", err)
+		} else {
+			var auth smtp.Auth
+			if os.Getenv("SMTP_USER") != "" {
+				auth = smtp.PlainAuth("", os.Getenv("SMTP_USER"), os.Getenv("SMTP_PASS"), smtpHost)
+			}
+			err = smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, buf.Bytes())
+			if err != nil {
+				log.Printf("Failed to send email for %s to %s: %s", host, to, err)
+			}
+		}
+	}
+
+	writeCORSHeaders(w, r)
+	w.WriteHeader(http.StatusOK)
+}
+
+func CollectMetric(w http.ResponseWriter, r *http.Request) {
+	origin, host := checkOriginCORS(w, r)
+	if origin == "" {
 		return
 	}
 
@@ -97,13 +207,7 @@ func CollectMetric(w http.ResponseWriter, r *http.Request) {
 		referer = "" // Don't both storing referer if its the triggering page.
 	}
 
-	ip := r.Header.Get("Fly-Client-IP")
-	if ip == "" {
-		ip, _, err = net.SplitHostPort(r.RemoteAddr)
-		if err != nil {
-			ip = ""
-		}
-	}
+	ip := requestIP(r)
 	if conf.IsIgnoredIP(ip) {
 		log.Printf("Ignoring %v on %s from ignored IP %s", event, page, ip)
 	} else {
@@ -133,6 +237,7 @@ func CollectMetric(w http.ResponseWriter, r *http.Request) {
 
 func setupPublicHandlers(mux *http.ServeMux) {
 	mux.HandleFunc("/", CollectMetric)
+	mux.HandleFunc("/contact", ContactForm)
 
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

@@ -86,3 +86,19 @@ func Test_IsIgnoredIP(t *testing.T) {
 		t.Error("Expected 192.168.1.2 to be ignored, but IsIgnoredIP returned false")
 	}
 }
+
+func Test_HostContacts(t *testing.T) {
+	conf, err := LoadConfig("testdata/goodconfig.json")
+	if err != nil {
+		t.Error("Expected no error, got", err)
+	}
+
+	contacts := conf.HostContacts("test.com")
+	if len(contacts) != 1 || contacts[0] != "hi@test.com" {
+		t.Error("Expected 1 contact (hi@test.com), got: ", contacts)
+	}
+	contacts = conf.HostContacts("another.com")
+	if len(contacts) != 0 {
+		t.Error("Expected no contacts, got: ", contacts)
+	}
+}

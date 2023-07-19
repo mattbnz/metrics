@@ -12,6 +12,7 @@ import (
 type MonitoredSite struct {
 	Host           string
 	AllowedOrigins []string
+	Contacts       []string
 }
 
 type Config struct {
@@ -81,4 +82,13 @@ func (c Config) IsIgnoredIP(ip string) bool {
 		}
 	}
 	return false
+}
+
+func (c Config) HostContacts(host string) []string {
+	for _, site := range c.Sites {
+		if site.Host == host {
+			return site.Contacts
+		}
+	}
+	return []string{}
 }

@@ -6,7 +6,8 @@
             "Host": "test.com",
             "AllowedOrigins": [
                 "http://test.com"
-            ]
+            ],
+            "Contacts": ["hi@test.com"]
         },
         {
             "Host": "another.com",
