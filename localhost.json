@@ -4,7 +4,8 @@
     "Sites": [
         {
             "Host": "localhost",
-            "AllowedOrigins": ["http://localhost:3000", "http://argon:1313", "http://localhost:1313"]
+            "AllowedOrigins": ["http://localhost:3000", "http://argon:1313", "http://localhost:1313"],
+            "Contacts": ["matt@mattb.net.nz"]
         }
     ],
     "IgnoreNets": []
