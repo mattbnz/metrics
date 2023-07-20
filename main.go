@@ -135,7 +135,7 @@ func ContactForm(w http.ResponseWriter, r *http.Request) {
 	sitedata.EventCount[metrics.EV_EMAIL]++
 
 	// Then send email.
-	from := "web-contact@" + host
+	from := "web-contact@mkmba.nz" // Must be mkmba.nz until SES is out of sandbox.
 	smtpHost := os.Getenv("SMTP_HOST")
 	smtpPort := os.Getenv("SMTP_PORT")
 

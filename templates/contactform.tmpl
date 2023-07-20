@@ -1,5 +1,5 @@
-From: {{.From}}
-To: {{.To}}
+From: <{{.From}}>
+To: {{ range .To }} <{{.}}>, {{ end }}
 Subject: Contact form submission from {{.Event.Host}}
 
 Name: {{.Event.Name}}
