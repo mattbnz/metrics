@@ -1,0 +1,13 @@
+<h1>Metrics</h1>
+
+{{ range .Config.Sites }}
+<h2>
+  <a href="/dashboard/{{ .Host }}">{{ .Host }}</a>
+</h2>
+<h3>Allowed Origins</h3>
+<ul>
+  {{ range .AllowedOrigins }}
+  <li>{{ . }}</li>
+  {{ end }}
+</ul>
+{{ end }}

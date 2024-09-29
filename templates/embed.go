@@ -5,7 +5,7 @@ import (
 	"text/template"
 )
 
-//go:embed *.tmpl
+//go:embed *.tmpl *.html
 var files embed.FS
 
 // Returns an http.Handler to serve the embedded JS

@@ -91,3 +91,12 @@ func First(out interface{}, where ...interface{}) *gorm.DB {
 	}
 	return DB.First(out, where...)
 }
+
+func Count(table interface{}, query any, args ...any) (int64, error) {
+	if DB == nil {
+		return 0, nil
+	}
+	var count int64
+	err := DB.Model(table).Where(query, args...).Count(&count).Error
+	return count, err
+}

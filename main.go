@@ -22,6 +22,7 @@ import (
 	"mattb.nz/web/metrics/js"
 	"mattb.nz/web/metrics/metrics"
 	"mattb.nz/web/metrics/prom"
+	"mattb.nz/web/metrics/reporting"
 	"mattb.nz/web/metrics/tailscale"
 	"mattb.nz/web/metrics/templates"
 )
@@ -252,6 +253,8 @@ func setupTSHandlers(mux *http.ServeMux) {
 	collector := prom.Collector{}
 	prometheus.MustRegister(collector)
 	mux.Handle("/metrics", promhttp.Handler())
+	mux.HandleFunc("/dashboard", reporting.Home)
+	mux.HandleFunc("/dashboard/{site}", reporting.Site)
 }
 
 func envName() string {
@@ -271,6 +274,7 @@ func main() {
 	if err := db.Init(conf); err != nil {
 		log.Printf("No DB available, will continue with Prometheus exports only!: %v", err)
 	}
+	reporting.SetConfig(conf)
 
 	err = tailscale.Init(fmt.Sprintf("metrics-%s", envName()), conf.StateDirectory, 30*time.Second)
 	if err != nil {

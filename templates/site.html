@@ -1,0 +1,121 @@
+{{define "top-referers"}}
+<div style="display: grid; grid-template-columns: repeat(2, max-content); column-gap: 1rem;">
+  <div>
+    <h4>Referer</h4>
+  </div>
+  <div>
+    <h4>Count</h4>
+  </div>
+  {{ range $referer, $count := . }}
+  <div>{{ $referer }}</div>
+  <div>{{ $count }}</div>
+  {{ end }}
+</div>
+{{end}}
+<h1>Metrics for {{.Site}} </h1>
+
+<a href="/dashboard">Back to index</a>
+
+<h2>Live Counts</h2>
+<div style="display: grid; grid-template-columns: repeat(2, max-content); column-gap: 1rem;">
+  {{ range $evt, $count := .LiveData.EventCount }}
+  <div>{{ $evt }}</div>
+  <div>{{ $count }}</div>
+  {{ end }}
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(5, max-content); column-gap: 1rem;">
+  <div></div>
+  <div>
+    <h3>Day</h3>
+  </div>
+  <div>
+    <h3>7 Days</h3>
+  </div>
+  <div>
+    <h3>30 Days</h3>
+  </div>
+  <div>
+    <h3>365 Days</h3>
+  </div>
+
+  <div>
+    <h3>Page Views</h3>
+  </div>
+  <div>{{ index .DayTotals 1 "pageview" }}</div>
+  <div>{{ index .DayTotals 7 "pageview" }}</div>
+  <div>{{ index .DayTotals 30 "pageview" }}</div>
+  <div>{{ index .DayTotals 365 "pageview" }}</div>
+
+  <div>
+    <h3>Reading Time</h3>
+  </div>
+  <div>{{ index .DayTotals 1 "readtime" }}</div>
+  <div>{{ index .DayTotals 7 "readtime" }}</div>
+  <div>{{ index .DayTotals 30 "readtime" }}</div>
+  <div>{{ index .DayTotals 365 "readtime" }}</div>
+
+  <div>
+    <h3>Top Referers</h3>
+  </div>
+  <div>{{ with (index .DayTotals 1 "referers") }}
+    <div style="display: grid; grid-template-columns: repeat(2, max-content); column-gap: 1rem;">
+      <div>
+        <h4>Referer</h4>
+      </div>
+      <div>
+        <h4>Count</h4>
+      </div>
+      {{ range . }}
+      <div>{{ .Referer }}</div>
+      <div>{{ .Count }}</div>
+      {{ end }}
+    </div>
+    {{end}}
+  </div>
+  <div>{{ with (index .DayTotals 7 "referers") }}
+    <div style="display: grid; grid-template-columns: repeat(2, max-content); column-gap: 1rem;">
+      <div>
+        <h4>Referer</h4>
+      </div>
+      <div>
+        <h4>Count</h4>
+      </div>
+      {{ range . }}
+      <div>{{ .Referer }}</div>
+      <div>{{ .Count }}</div>
+      {{ end }}
+    </div>
+    {{end}}
+  </div>
+  <div>{{ with (index .DayTotals 30 "referers") }}
+    <div style="display: grid; grid-template-columns: repeat(2, max-content); column-gap: 1rem;">
+      <div>
+        <h4>Referer</h4>
+      </div>
+      <div>
+        <h4>Count</h4>
+      </div>
+      {{ range . }}
+      <div>{{ .Referer }}</div>
+      <div>{{ .Count }}</div>
+      {{ end }}
+    </div>
+    {{end}}
+  </div>
+  <div>{{ with (index .DayTotals 365 "referers") }}
+    <div style="display: grid; grid-template-columns: repeat(2, max-content); column-gap: 1rem;">
+      <div>
+        <h4>Referer</h4>
+      </div>
+      <div>
+        <h4>Count</h4>
+      </div>
+      {{ range . }}
+      <div>{{ .Referer }}</div>
+      <div>{{ .Count }}</div>
+      {{ end }}
+    </div>
+    {{end}}
+  </div>
+</div
