@@ -1,5 +1,5 @@
 # Temporary builder with npm, etc installed.
-FROM golang:1.20 as builder
+FROM golang:1.23 as builder
 WORKDIR /app
 COPY . ./
 # Build JS bundle and replace client.js with it.
@@ -10,7 +10,7 @@ RUN git config --global --add safe.directory /app
 RUN go build -v -o app
 
 # Fresh image without npm, for smaller size.
-FROM golang:1.20
+FROM golang:1.23
 RUN apt update && apt install -y sqlite3
 
 WORKDIR /app
