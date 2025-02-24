@@ -1,4 +1,4 @@
-import { version } from './version'
+import { version } from './version.js'
 import { onLCP, onFID, onCLS } from 'web-vitals';
 
 var view = Math.random().toString(36).substring(2, 12);
